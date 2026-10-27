@@ -27,6 +27,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.xauusd.intelligence.analysis.ScalpChecklist
+import com.xauusd.intelligence.analysis.ScalpChecklistInput
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,6 +50,9 @@ private fun DashboardScreen() {
     var momentum by rememberSaveable { mutableStateOf("Not reviewed") }
     var keyLevel by rememberSaveable { mutableStateOf("Not reviewed") }
     var reviewed by rememberSaveable { mutableStateOf(false) }
+    var breakConfirmed by rememberSaveable { mutableStateOf("Not confirmed") }
+    var fvgStatus by rememberSaveable { mutableStateOf("Not confirmed") }
+    var m5Confirmation by rememberSaveable { mutableStateOf("Not confirmed") }
 
     val summary = when {
         !reviewed -> "No chart review yet"
@@ -120,6 +125,51 @@ private fun DashboardScreen() {
             modifier = Modifier.fillMaxWidth()
         ) { Text("Review my observations") }
 
+        Text("SCALPING CONFIRMATION CHECKLIST", style = MaterialTheme.typography.titleMedium)
+        Text("For short-term review, select only evidence you can actually see. M5 confirmation is a manual observation.")
+        ReviewChoiceCard(
+            title = "4. Break of structure / change of character",
+            options = listOf("Confirmed", "Not confirmed"),
+            selected = breakConfirmed,
+            onSelect = { breakConfirmed = it; reviewed = true }
+        )
+        ReviewChoiceCard(
+            title = "5. Unmitigated fair value gap (FVG)",
+            options = listOf("Visible and unmitigated", "Not confirmed"),
+            selected = fvgStatus,
+            onSelect = { fvgStatus = it; reviewed = true }
+        )
+        ReviewChoiceCard(
+            title = "6. M5 confirms the intended direction",
+            options = listOf("Confirmed", "Not confirmed"),
+            selected = m5Confirmation,
+            onSelect = { m5Confirmation = it; reviewed = true }
+        )
+
+        val checklist = ScalpChecklist.evaluate(
+            ScalpChecklistInput(
+                timeframe = timeframe,
+                structure = structure,
+                momentum = momentum,
+                keyLevel = keyLevel,
+                breakConfirmed = breakConfirmed == "Confirmed",
+                unmitigatedFvgVisible = fvgStatus == "Visible and unmitigated",
+                m5ConfirmsDirection = m5Confirmation == "Confirmed"
+            )
+        )
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("SCALPING CHECKLIST RESULT", style = MaterialTheme.typography.labelMedium)
+                Text(checklist.status, style = MaterialTheme.typography.titleMedium)
+                Text("Observed bias: ${checklist.direction}")
+                checklist.reasons.forEach { reason -> Text("• $reason") }
+                Text("This checklist evaluates your selections only. It does not detect chart patterns automatically or predict profit.")
+            }
+        }
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -140,6 +190,9 @@ private fun DashboardScreen() {
                 structure = "Not reviewed"
                 momentum = "Not reviewed"
                 keyLevel = "Not reviewed"
+                breakConfirmed = "Not confirmed"
+                fvgStatus = "Not confirmed"
+                m5Confirmation = "Not confirmed"
                 reviewed = false
             },
             modifier = Modifier.fillMaxWidth()
