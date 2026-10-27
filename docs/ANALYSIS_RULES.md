@@ -1,6 +1,6 @@
 # Initial technical-analysis rules
 
-These rules describe intended behaviour; they are not implemented fully yet.
+These rules describe the initial behaviour. The manual scalping checklist is implemented; automatic chart recognition is not yet implemented.
 
 ## Inputs
 - A single user-approved screenshot.
