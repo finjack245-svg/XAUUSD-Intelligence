@@ -44,6 +44,7 @@ object ScalpChecklist {
         if (input.keyLevel == "Rejected support" && direction == "Bearish") {
             reasons += "Support rejection conflicts with a bearish bias."
         }
+        if (input.keyLevel == "Not reviewed") reasons += "Nearby key-level reaction has not been reviewed."
         if (!input.breakConfirmed) reasons += "BOS/CHOCH has not been confirmed in the visible chart."
         if (!input.unmitigatedFvgVisible) reasons += "No clearly visible unmitigated FVG selected."
         if (!input.m5ConfirmsDirection) reasons += "M5 directional confirmation has not been selected."
@@ -56,7 +57,8 @@ object ScalpChecklist {
             input.unmitigatedFvgVisible &&
             input.m5ConfirmsDirection &&
             !levelConflict &&
-            input.keyLevel != "No clear reaction"
+            input.keyLevel != "No clear reaction" &&
+            input.keyLevel != "Not reviewed"
 
         if (ready) {
             reasons += "Checklist conditions are selected; manually verify the chart and risk before any trade."
