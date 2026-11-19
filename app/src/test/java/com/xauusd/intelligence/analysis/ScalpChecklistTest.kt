@@ -12,7 +12,7 @@ class ScalpChecklistTest {
                 timeframe = "M1",
                 structure = "Bullish structure",
                 momentum = "Bullish",
-                keyLevel = "No clear reaction",
+                keyLevel = "Rejected support",
                 breakConfirmed = true,
                 unmitigatedFvgVisible = true,
                 m5ConfirmsDirection = true
