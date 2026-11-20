@@ -1,6 +1,13 @@
 package com.xauusd.intelligence
 
 import android.os.Bundle
+import android.content.Intent
+import android.media.projection.MediaProjectionManager
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -45,6 +52,21 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun DashboardScreen() {
+    val context = LocalContext.current
+    var captureStatus by rememberSaveable { mutableStateOf("Screen analysis is OFF") }
+    val captureLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val data = result.data
+        if (result.resultCode == Activity.RESULT_OK && data != null) {
+            val service = Intent(context, XauScreenCaptureService::class.java).apply {
+                putExtra(XauScreenCaptureService.EXTRA_RESULT_CODE, result.resultCode)
+                putExtra(XauScreenCaptureService.EXTRA_RESULT_DATA, data)
+            }
+            ContextCompat.startForegroundService(context, service)
+            captureStatus = "Continuous screen OCR is running. Android screen-sharing indicator is visible."
+        } else {
+            captureStatus = "Screen permission was not granted. Analysis remains OFF."
+        }
+    }
     var timeframe by rememberSaveable { mutableStateOf("M1") }
     var structure by rememberSaveable { mutableStateOf("Not reviewed") }
     var momentum by rememberSaveable { mutableStateOf("Not reviewed") }
@@ -95,6 +117,32 @@ private fun DashboardScreen() {
                     if (timeframe == "M5") Button(onClick = { timeframe = "M5" }) { Text("M5 • Selected") }
                     else OutlinedButton(onClick = { timeframe = "M5" }) { Text("M5") }
                 }
+            }
+        }
+
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("LIVE MT5 SCREEN MONITOR", style = MaterialTheme.typography.titleMedium)
+                Text(captureStatus)
+                Text("When enabled, the app checks the shared screen about every 1.5 seconds and reads visible text. This first capture stage does not yet recognise candlestick shapes or calculate exact OHLC prices.")
+                Button(onClick = {
+                    val manager = context.getSystemService(android.content.Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+                    captureLauncher.launch(manager.createScreenCaptureIntent())
+                }, modifier = Modifier.fillMaxWidth()) { Text("START CONTINUOUS ANALYSIS") }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = {
+                        context.startService(Intent(context, XauScreenCaptureService::class.java).setAction(XauScreenCaptureService.ACTION_PAUSE))
+                        captureStatus = "Analysis paused."
+                    }) { Text("PAUSE") }
+                    OutlinedButton(onClick = {
+                        context.startService(Intent(context, XauScreenCaptureService::class.java).setAction(XauScreenCaptureService.ACTION_RESUME))
+                        captureStatus = "Resume requested. If permission was revoked, start a new session."
+                    }) { Text("RESUME") }
+                }
+                OutlinedButton(onClick = {
+                    context.startService(Intent(context, XauScreenCaptureService::class.java).setAction(XauScreenCaptureService.ACTION_STOP))
+                    captureStatus = "Analysis stopped. Start again to approve a new capture session."
+                }, modifier = Modifier.fillMaxWidth()) { Text("STOP MONITORING") }
             }
         }
 
